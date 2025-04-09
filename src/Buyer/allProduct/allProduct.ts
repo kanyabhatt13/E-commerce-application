@@ -9,6 +9,8 @@ import { populateUserPopup, bindLogoutButton } from "../../Navbar/userInfo";
 
 document.addEventListener("DOMContentLoaded", async () => {
   updateBadgeCount();
+
+
   const productList = document.getElementById("product-list") as HTMLElement;
   const navbarElement = document.getElementsByClassName(
     "navbar"
@@ -75,19 +77,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  async function handleAddToCart(productId: string, cardElement: HTMLElement) {
+  async function handleAddToCart(productId: string) {
     const userId = localStorage.getItem("user-token");
     try {
       const data = await GET<Array<User>>(`user?userId=${userId}`);
       let productData = await GET<Product>(`products/${productId}`);
-
+      console.log("hello: ",productId);
+      
       let productDataIndex = data[0].cart.findIndex(
         (product) => product.id === productData.id
       );
       if (productDataIndex === -1) {
         productData = { ...productData, ...{ count: 1 } };
         data[0].cart.push(productData);
-        console.log(data[0].cart);
+       
       } else {
         data[0].cart[productDataIndex].count! += 1;
       }
@@ -124,7 +127,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 data-name="${product.name}" 
                 data-image="${product.image}" 
                 data-description="${product.description || "No description"}" 
-                data-price="$${product.price}">
+                data-price="$${product.price}"
+                data-id="${product.id}"
+                >
               <img src="${
                 product.image
               }" class="card-img-top product-img" alt="${product.name}">
@@ -141,64 +146,71 @@ document.addEventListener("DOMContentLoaded", async () => {
       )
       .join("");
 
-    setTimeout(() => {
-      document.querySelectorAll(".product-click").forEach((element) => {
-        element.addEventListener("click", (e) => {
-          const target = e.currentTarget as HTMLElement;
-
-          const name = target.dataset.name || "";
-          const image = target.dataset.image || "";
-          const description = target.dataset.description || "";
-          const price = target.dataset.price || "";
-          const button = element.querySelector("button");
-          button!.addEventListener("click", (event) => {
-            event.stopPropagation();
-            if ("id" in event.target!)
-              handleAddToCart(
-                event.target!.id as string,
-                element as HTMLElement
-              );
-          });
-          (
-            document.getElementById("popupProductName") as HTMLElement
-          ).textContent = name;
-          (
-            document.getElementById("popupProductImage") as HTMLImageElement
-          ).src = image;
-          (
-            document.getElementById("popupProductDescription") as HTMLElement
-          ).textContent = description;
-          (
-            document.getElementById("popupProductPrice") as HTMLElement
-          ).textContent = price;
-
-          (
-            document.getElementById("productPopup") as HTMLElement
-          ).style.display = "flex";
-        });
-      });
-
-      // Close popup
-      (document.getElementById("popupClose") as HTMLElement).addEventListener(
-        "click",
-        () => {
-          (
-            document.getElementById("productPopup") as HTMLElement
-          ).style.display = "none";
-        }
-      );
-
-      // Close when clicking outside content
-      document
-        .getElementById("productPopup")
-        ?.addEventListener("click", (e) => {
-          if ((e.target as HTMLElement).id === "productPopup") {
+      setTimeout(() => {
+       
+        document.querySelectorAll(".product-click").forEach((card) => {
+          card.addEventListener("click", (e) => {
+            const target = e.currentTarget as HTMLElement;
+      
+            const name = target.dataset.name || "";
+            const image = target.dataset.image || "";
+            const description = target.dataset.description || "";
+            const price = target.dataset.price || "";
+      
+            (
+              document.getElementById("popupProductName") as HTMLElement
+            ).textContent = name;
+            (
+              document.getElementById("popupProductImage") as HTMLImageElement
+            ).src = image;
+            (
+              document.getElementById("popupProductDescription") as HTMLElement
+            ).textContent = description;
+            (
+              document.getElementById("popupProductPrice") as HTMLElement
+            ).textContent = price;
+      
             (
               document.getElementById("productPopup") as HTMLElement
-            ).style.display = "none";
+            ).style.display = "flex";
+
+            
+            (document.getElementsByClassName('popupAddToCart')[0] as HTMLElement).addEventListener('click', (event: Event)=>{
+              if("id" in event.target!){
+                handleAddToCart(target.dataset.id as string);
+              }
+            });
+
+          });
+        });
+      
+        
+        document.querySelectorAll(".product-card button").forEach((btn) => {
+          btn.addEventListener("click", (event) => {
+            event.stopPropagation(); // Prevent card click
+            const button = event.currentTarget as HTMLButtonElement;
+            handleAddToCart(button.id);
+          });
+        });
+      
+
+        (document.getElementById("popupClose") as HTMLElement).addEventListener(
+          "click",
+          () => {
+            (document.getElementById("productPopup") as HTMLElement).style.display =
+              "none";
+          }
+        );
+      
+  
+        document.getElementById("productPopup")?.addEventListener("click", (e) => {
+          if ((e.target as HTMLElement).id === "productPopup") {
+            (document.getElementById("productPopup") as HTMLElement).style.display =
+              "none";
           }
         });
-    }, 0);
+      }, 0);
+      
   }
 
   fetchProducts();

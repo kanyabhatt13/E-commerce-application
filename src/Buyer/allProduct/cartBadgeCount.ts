@@ -10,4 +10,6 @@ export async function updateBadgeCount() {
     0
   );
   document.getElementsByClassName("cart-badge")[0].textContent = `${cartCount}`;
+  console.log(cartCount);
+  
 }
